@@ -1,0 +1,403 @@
+<!-- 
+  AUTHOR: Martin Marzejon
+  UPDATED: 08/01/2011
+  TITLE: WARM PROFIT & LOSS
+  COMMENTS: WARM P&L - Supply Plans
+-->
+<gel:script 
+  xmlns:jelly="jelly:core" 
+  xmlns:sql="jelly:sql" 
+  xmlns:gel="jelly:com.niku.union.gel.GELTagLibrary">
+  
+  <!-- DATABASE PARAMETERS -->
+  <gel:parameter var="orap10User" default="warm011" />
+  <gel:parameter var="orap10Pass" default="xxxxxx01" secure="true" />
+  
+  <!-- CONNECTION STRING TO ORAP10 -->
+  <sql:setDataSource var="CDW"
+  url="jdbc:oracle:thin:@(DESCRIPTION=
+    (LOAD_BALANCE=on)(FAILOVER=on)
+    (ADDRESS=(PROTOCOL=TCP)(HOST=dbv1p03)(PORT=1510))
+    (ADDRESS=(PROTOCOL=TCP)(HOST=dbv2p03)(PORT=1510))
+    (CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=orap10.world)))"
+  driver="oracle.jdbc.driver.OracleDriver"
+  user="${orap10User}" password="${orap10Pass}" />
+
+  <!-- CONNECTION STRING TO warmDB -->
+  <gel:setDataSource dbId="Niku" var="warmDB" />
+    
+  <!-- CREATE WARM TABLE (IF DOES NOT EXIST) -->
+  <jelly:catch>
+    <sql:query escapeText="false" dataSource="${warmDB}">
+      CREATE TABLE WARM01.CID_SP_CLARITY
+      (
+        UUID            VARCHAR2(255 BYTE),
+        PERSONNEL_NUM   VARCHAR2(255 BYTE),
+        NAME            VARCHAR2(255 BYTE),
+        COST_CENTER     VARCHAR2(255 BYTE),
+        DATE_UID        VARCHAR2(255 BYTE),
+        CC_PERCENT      NUMBER,
+        FTE_AMOUNT      NUMBER,
+        FTE             NUMBER
+      )
+    </sql:query>
+  </jelly:catch>
+  
+  <!-- GET COST CENTER RECORDS FROM CDW -->
+    <sql:query escapeText="false" dataSource="${CDW}" var="clarityResources">
+      SELECT
+        D.UUID,
+        D.PERSONNEL_NUM,
+        D.NAME,
+        D.COST_CENTER,
+        D.DATE_UID,
+        CASE WHEN S.AMOUNT IS NULL OR S.AMOUNT = 0 THEN 0 ELSE D.AMOUNT/S.AMOUNT END CC_PERCENT,
+        CASE WHEN T.AMOUNT IS NULL OR T.AMOUNT = 0 THEN 0 ELSE D.AMOUNT/T.AMOUNT END FTE_AMOUNT,
+        T.AMOUNT FTE
+      FROM 
+       (SELECT CV.UUID,
+               CV.PERSONNEL_NUM,
+               CV.NAME,
+               CV.COST_CENTER,
+               CV.DATE_UID,
+               SUM (CV.AMOUNT) AMOUNT
+          FROM (SELECT N.PERSONNEL_NUM || N.YEAR || '01' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '01' DATE_UID,
+                       JAN_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '02' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '02' DATE_UID,
+                       FEB_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '03' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '03' DATE_UID,
+                       MAR_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '04' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '04' DATE_UID,
+                       APR_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '05' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '05' DATE_UID,
+                       MAY_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '06' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '06' DATE_UID,
+                       JUN_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '07' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '07' DATE_UID,
+                       JUL_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '08' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '08' DATE_UID,
+                       AUG_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '09' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '09' DATE_UID,
+                       SEP_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '10' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '10' DATE_UID,
+                       OCT_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '11' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '11' DATE_UID,
+                       NOV_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '12' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '12' DATE_UID,
+                       DEC_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N) CV
+         WHERE CV.SCENARIO = 'salary current year'
+      GROUP BY CV.UUID,
+               CV.PERSONNEL_NUM,
+               CV.NAME,
+               CV.DATE_UID,
+               CV.COST_CENTER) D,
+        (SELECT CV.COST_CENTER,
+               CV.DATE_UID,
+               SUM (CV.AMOUNT) AMOUNT
+          FROM (SELECT N.PERSONNEL_NUM || N.YEAR || '01' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '01' DATE_UID,
+                       JAN_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '02' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '02' DATE_UID,
+                       FEB_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '03' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '03' DATE_UID,
+                       MAR_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '04' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '04' DATE_UID,
+                       APR_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '05' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '05' DATE_UID,
+                       MAY_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '06' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '06' DATE_UID,
+                       JUN_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '07' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '07' DATE_UID,
+                       JUL_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '08' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '08' DATE_UID,
+                       AUG_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '09' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '09' DATE_UID,
+                       SEP_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '10' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '10' DATE_UID,
+                       OCT_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '11' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '11' DATE_UID,
+                       NOV_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '12' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '12' DATE_UID,
+                       DEC_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N) CV
+         WHERE CV.SCENARIO = 'salary current year'
+      GROUP BY CV.DATE_UID,
+               CV.COST_CENTER) S,
+               (SELECT CV.UUID,
+               CV.PERSONNEL_NUM,
+               CV.NAME,
+               CV.DATE_UID,
+               SUM (CV.AMOUNT) AMOUNT
+          FROM (SELECT N.PERSONNEL_NUM || N.YEAR || '01' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '01' DATE_UID,
+                       JAN_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '02' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '02' DATE_UID,
+                       FEB_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '03' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '03' DATE_UID,
+                       MAR_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '04' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '04' DATE_UID,
+                       APR_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '05' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '05' DATE_UID,
+                       MAY_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '06' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '06' DATE_UID,
+                       JUN_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '07' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '07' DATE_UID,
+                       JUL_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '08' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '08' DATE_UID,
+                       AUG_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '09' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '09' DATE_UID,
+                       SEP_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '10' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '10' DATE_UID,
+                       OCT_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '11' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '11' DATE_UID,
+                       NOV_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N
+                UNION ALL
+                SELECT N.PERSONNEL_NUM || N.YEAR || '12' UUID,
+                       N.PERSONNEL_NUM,N.NAME,
+                       N.SCENARIO,
+                       N.COST_CENTER,
+                       N.YEAR || '12' DATE_UID,
+                       DEC_AM AMOUNT
+                  FROM BPCL01OD.NYLSALARY_FTE N) CV
+         WHERE CV.SCENARIO = 'salary current year'
+      GROUP BY CV.UUID,
+               CV.PERSONNEL_NUM,
+               CV.NAME,
+               CV.DATE_UID) T
+      WHERE D.COST_CENTER = S.COST_CENTER
+            AND D.DATE_UID = S.DATE_UID
+            AND D.UUID = T.UUID
+    </sql:query>
+  
+  <!-- DELETE ALL RECORDS FROM WARM TABLE -->
+  <jelly:catch>
+    <sql:update escapeText="false" dataSource="${warmDB}">
+      BEGIN
+        DELETE FROM WARM01.CID_SP_CLARITY; 
+        COMMIT;
+      END;
+    </sql:update>
+  </jelly:catch>
+  
+  <jelly:forEach trim="false" var="clarityResource" items="${clarityResources.rows}">
+    <!-- INSERT COST CENTERS INTO WARM TABLE -->
+    <sql:update escapeText="false" dataSource="${warmDB}">
+      INSERT INTO WARM01.CID_SP_CLARITY(
+        UUID,PERSONNEL_NUM,NAME,COST_CENTER,DATE_UID,CC_PERCENT,FTE_AMOUNT,FTE
+      ) values (?,?,?,?,?,?,?,?)
+      <sql:param value="${clarityResource.UUID}" />
+      <sql:param value="${clarityResource.PERSONNEL_NUM}" />
+      <sql:param value="${clarityResource.NAME}" />
+      <sql:param value="${clarityResource.COST_CENTER}" />
+      <sql:param value="${clarityResource.DATE_UID}" />
+      <sql:param value="${clarityResource.CC_PERCENT}" />
+      <sql:param value="${clarityResource.FTE_AMOUNT}" />
+      <sql:param value="${clarityResource.FTE}" />
+    </sql:update>
+  </jelly:forEach>
+  
+</gel:script>
